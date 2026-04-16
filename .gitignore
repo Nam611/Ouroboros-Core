@@ -1,0 +1,17 @@
+# 🦀 Lõi Rust & Trình biên dịch
+target/
+Cargo.lock
+
+# 🧠 Ký ức Lượng tử & Não bộ Vật lý (KHÔNG PUSH MODEL LÊN GITHUB)
+.ouroboros_cache/
+*.safetensors
+*.json
+!Cargo.toml
+
+# 🦂 Lồng ấp Đa Tác Tử (Worktree Sandbox)
+.ouroboros_sandbox/
+
+# ⚙️ Môi trường & OS
+.env
+.DS_Store
+*.swp

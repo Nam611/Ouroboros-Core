@@ -1,0 +1,49 @@
+[package]
+name = "ouroboros_core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Nam & Gemini <Ouroboros Architect>"]
+description = "Agentic Operating System - Depth Scaling with TurboQuant Memory"
+# 🚨 VIÊN ĐẠN BẠC: Ép phiên bản, khóa chặt hệ sinh thái
+rust-version = "1.85" 
+
+[dependencies]
+# 1. Trái tim bất đồng bộ (Async Engine)
+tokio = { version = "1.36", features = ["full"] }
+async-trait = "0.1"
+
+# 2. Hệ miễn dịch (Zero-Panic Policy)
+thiserror = "1.0"
+anyhow = "1.0"
+
+# 3. Não bộ viễn trắc (Telemetry & Observability)
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# 4. Giao tiếp dữ liệu (Serialization)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 5. I/O & Byte manipulation (Dành cho TurboQuant & Permission Sandbox)
+tokio-util = { version = "0.7", features = ["codec", "io"] }
+bytes = "1.5"
+
+# ---------------------------------------------------------
+# 🚨 VŨ KHÍ MỚI: KỶ NGUYÊN NEURAL BRIDGE (LÕI TENSOR NATIVE)
+# ---------------------------------------------------------
+candle-core = "0.8.1"
+candle-nn = "0.8.1"
+
+
+# [BỔ SUNG CHO LỄ ĐÁNH THỨC LLM]
+candle-transformers = "0.8.1" # Bản thiết kế mạch Transformer chuẩn
+hf-hub = "0.3.2"              # Cầu nối tải Model trực tiếp (Sync/Async)
+tokenizers = "0.19.1"         # Động cơ băm từ vựng C/Rust native
+
+[profile.release]
+# Tối ưu hóa cực đại cho Compute
+opt-level = 3        
+lto = true           
+codegen-units = 1    
+panic = "abort"      
+strip = true
