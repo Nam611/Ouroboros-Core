@@ -35,7 +35,16 @@ impl EvolutionDaemon {
         }
 
         loop {
-            let source_files = self.gather_dna(&self.project_root)?;
+            // Xử lý lỗi trích xuất DNA để Daemon không bị sập
+            let source_files = match self.gather_dna(&self.project_root) {
+                Ok(files) => files,
+                Err(e) => {
+                    error!("❌ Lỗi trích xuất DNA mã nguồn: {:?}", e);
+                    sleep(self.scan_interval).await;
+                    continue;
+                }
+            };
+
             if source_files.is_empty() {
                 warn!("⚠️ No source code found for evolution.");
                 sleep(self.scan_interval).await;
@@ -46,6 +55,7 @@ impl EvolutionDaemon {
                 let mut mutation_task: Option<AgentTask> = None;
 
                 {
+                    // Cơ chế sinh tồn của Daemon: Lỗi đọc 1 file thì bỏ qua, không sập toàn hệ thống
                     let file = match File::open(&file_path) {
                         Ok(f) => f,
                         Err(e) => {
@@ -71,7 +81,7 @@ impl EvolutionDaemon {
                             mutation_task = Some(task);
                         }
                     }
-                } // Giải phóng file mmap
+                } // Giải phóng file mmap ra khỏi RAM
 
                 if let Some(task) = mutation_task {
                     info!("🎯 Evolutionary bottleneck detected in {:?}. Triggering Swarm Mutation...", file_path);
@@ -92,8 +102,9 @@ impl EvolutionDaemon {
     fn gather_dna(&self, dir: &Path) -> Result<Vec<PathBuf>> {
         let mut files = Vec::new();
         if dir.is_dir() {
-            for entry in std::fs::read_dir(dir).map_err(|e| OuroborosError::System(e.to_string()))? {
-                let entry = entry.map_err(|e| OuroborosError::System(e.to_string()))?;
+            // 🚨 TITANIUM FIX: Khóa chặt kiểu dữ liệu std::io::Error để triệt tiêu lỗi E0282
+            for entry in std::fs::read_dir(dir).map_err(|e: std::io::Error| OuroborosError::System(e.to_string()))? {
+                let entry = entry.map_err(|e: std::io::Error| OuroborosError::System(e.to_string()))?;
                 let path = entry.path();
                 let path_str = path.to_string_lossy();
                 
@@ -111,7 +122,7 @@ impl EvolutionDaemon {
         Ok(files)
     }
 
-    /// 🔥 NÂNG CẤP: &mut self
+    /// 🔥 NÂNG CẤP: &mut self để cập nhật KV Cache của Não bộ
     fn analyze_with_gemma(&mut self, code_content: &str, file_path: &Path) -> Option<AgentTask> {
         let path_str = file_path.to_string_lossy();
         

@@ -74,7 +74,7 @@ impl ProjectScanner {
 
     /// Đọc nội dung file an toàn với bộ nhớ
     pub async fn read_file_content(&self, path: &Path) -> Result<String> {
-        let content = fs::read_to_string(path).await.map_err(|e| {
+        let content = fs::read_to_string(path).await.map_err(|e: std::io::Error| {
             crate::error::OuroborosError::Reasoning(format!("Lỗi đọc file {:?}: {}", path, e))
         })?;
         Ok(content)

@@ -126,7 +126,7 @@ impl SwarmCoordinator {
         if let (Some(start), Some(end)) = (json_start, json_end) {
             let clean_json = &raw_output[start..=end];
             serde_json::from_str::<FileMutationContract>(clean_json)
-                .map_err(|e| OuroborosError::Swarm(format!("Lỗi Parse Hợp đồng: {}", e)))
+                .map_err(|e: serde_json::Error| OuroborosError::Swarm(format!("Lỗi Parse Hợp đồng: {}", e)))
         } else {
             Err(OuroborosError::Swarm("Hợp đồng JSON không tồn tại trong luồng suy luận.".into()))
         }

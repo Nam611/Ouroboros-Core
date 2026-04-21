@@ -62,7 +62,9 @@ impl SemanticGraph {
         Ok(Some(self.documents[best_index].clone()))
     }
 
-    /// ⚡ ĐỘNG CƠ NHÂN VÔ HƯỚNG TỐI ƯU TẬN ĐÁY (SIMD Unrolling)
+    /// ⚡ ĐỘNG CƠ NHÂN VÔ HƯỚNG TỐI ƯU TẬN ĐÁY (AVX2 / SIMD Unrolling)
+    /// Sử dụng inline(always) để triệt tiêu độ trễ gọi hàm, ép CPU chạy max công suất
+    #[inline(always)]
     fn fast_cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
         let mut dot_product = 0.0;
         let mut norm_a = 0.0;
@@ -88,13 +90,16 @@ impl SemanticGraph {
     /// Lưu toàn bộ Tàng Kinh Các xuống đĩa (Binary Format)
     pub fn save_to_disk(&self, path: &str) -> Result<()> {
         info!("💾 Đang nén Tàng Kinh Các xuống đĩa từ (Binary Format)...");
-        let file = File::create(path).map_err(|e| {
+        
+        // 🚨 TITANIUM FIX: Khai báo tường minh lỗi hệ điều hành (I/O)
+        let file = File::create(path).map_err(|e: std::io::Error| {
             OuroborosError::System(format!("Không thể tạo file index: {}", e))
         })?;
         
         let writer = BufWriter::new(file);
         
-        bincode::serialize_into(writer, &self).map_err(|e| {
+        // 🚨 TITANIUM FIX: Khai báo tường minh lỗi lượng tử hóa (bincode)
+        bincode::serialize_into(writer, &self).map_err(|e: bincode::Error| {
             OuroborosError::System(format!("Lỗi lượng tử hóa nhị phân: {}", e))
         })?;
         
@@ -105,12 +110,16 @@ impl SemanticGraph {
     /// Nạp thẳng từ ổ cứng lên RAM (Tốc độ đọc GB/s)
     pub fn load_from_disk(path: &str) -> Result<Self> {
         debug!("⚡ Kích hoạt nạp bộ nhớ nhị phân từ [{}]...", path);
-        let file = File::open(path).map_err(|e| {
+        
+        // 🚨 TITANIUM FIX: Khai báo tường minh lỗi hệ điều hành (I/O)
+        let file = File::open(path).map_err(|e: std::io::Error| {
             OuroborosError::System(format!("Lỗi mở file index: {}", e))
         })?;
+        
         let reader = BufReader::new(file);
         
-        let graph: SemanticGraph = bincode::deserialize_from(reader).map_err(|e| {
+        // 🚨 TITANIUM FIX: Khai báo tường minh lỗi giải mã nhị phân (bincode)
+        let graph: SemanticGraph = bincode::deserialize_from(reader).map_err(|e: bincode::Error| {
             OuroborosError::System(format!("Lỗi giải mã nhị phân: {}", e))
         })?;
         
