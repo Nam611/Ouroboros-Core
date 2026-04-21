@@ -1,10 +1,14 @@
 use crate::error::{OuroborosError, Result};
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{BufReader, BufWriter};
 use tracing::{debug, info};
 
-/// 📚 TÀNG KINH CÁC: Lưu trữ Vector Tri thức trên RAM
+/// 📚 TÀNG KINH CÁC: Lưu trữ Vector Tri thức trên RAM (Kiến trúc SoA - Structure of Arrays)
+#[derive(Serialize, Deserialize)]
 pub struct SemanticGraph {
     pub documents: Vec<String>,       // Chứa text thật (Wikipedia, Docs)
-    pub vectors: Vec<Vec<f32>>,       // Chứa tọa độ không gian của Text
+    pub vectors: Vec<Vec<f32>>,       // Chứa tọa độ không gian của Text (Tối ưu Cache L1/L2)
     pub dimension: usize,             // Số chiều của Vector (ví dụ: 384 chiều)
 }
 
@@ -16,6 +20,12 @@ impl SemanticGraph {
             vectors: Vec::new(),
             dimension,
         }
+    }
+
+    /// Xóa sạch Tàng Kinh Các (Dùng khi muốn Re-index lại dự án)
+    pub fn clear(&mut self) {
+        self.documents.clear();
+        self.vectors.clear();
     }
 
     /// Nạp tri thức vật lý vào Não bộ
@@ -32,7 +42,6 @@ impl SemanticGraph {
     }
 
     /// 🧮 LÕI TÌM KIẾM CỰC TỐC (SIMD-Optimized Cosine Similarity)
-    /// Tìm ra phân mảnh kiến thức gần nhất với câu hỏi của User
     pub fn search_closest_knowledge(&self, query_vector: &[f32]) -> Result<Option<String>> {
         if self.vectors.is_empty() {
             return Ok(None); // Não chưa có dữ liệu
@@ -54,14 +63,11 @@ impl SemanticGraph {
     }
 
     /// ⚡ ĐỘNG CƠ NHÂN VÔ HƯỚNG TỐI ƯU TẬN ĐÁY (SIMD Unrolling)
-    /// Tính Cosine Similarity: (A.B) / (|A|*|B|)
     fn fast_cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
         let mut dot_product = 0.0;
         let mut norm_a = 0.0;
         let mut norm_b = 0.0;
 
-        // Ép LLVM dùng lệnh SIMD để nhân nhiều số cùng lúc
-        // (Sử dụng iterators zip cho phép compiler tối ưu hóa vectorization rất tốt)
         for (&va, &vb) in a.iter().zip(b.iter()) {
             dot_product += va * vb;
             norm_a += va * va;
@@ -72,7 +78,43 @@ impl SemanticGraph {
             return 0.0;
         }
 
-        // Căn bậc 2 siêu tốc bằng hàm nội tại (intrinsic) của phần cứng
         dot_product / (norm_a.sqrt() * norm_b.sqrt())
+    }
+
+    // =========================================================================
+    // 🚨 MODULE BẤT TỬ (PERSISTENCE): ĐÓNG BĂNG VÀ RÃ ĐÔNG BỘ NHỚ TỚI ĐĨA CỨNG
+    // =========================================================================
+
+    /// Lưu toàn bộ Tàng Kinh Các xuống đĩa (Binary Format)
+    pub fn save_to_disk(&self, path: &str) -> Result<()> {
+        info!("💾 Đang nén Tàng Kinh Các xuống đĩa từ (Binary Format)...");
+        let file = File::create(path).map_err(|e| {
+            OuroborosError::System(format!("Không thể tạo file index: {}", e))
+        })?;
+        
+        let writer = BufWriter::new(file);
+        
+        bincode::serialize_into(writer, &self).map_err(|e| {
+            OuroborosError::System(format!("Lỗi lượng tử hóa nhị phân: {}", e))
+        })?;
+        
+        info!("✅ Đã phong ấn {} Vector Tri thức an toàn tại [{}]", self.documents.len(), path);
+        Ok(())
+    }
+
+    /// Nạp thẳng từ ổ cứng lên RAM (Tốc độ đọc GB/s)
+    pub fn load_from_disk(path: &str) -> Result<Self> {
+        debug!("⚡ Kích hoạt nạp bộ nhớ nhị phân từ [{}]...", path);
+        let file = File::open(path).map_err(|e| {
+            OuroborosError::System(format!("Lỗi mở file index: {}", e))
+        })?;
+        let reader = BufReader::new(file);
+        
+        let graph: SemanticGraph = bincode::deserialize_from(reader).map_err(|e| {
+            OuroborosError::System(format!("Lỗi giải mã nhị phân: {}", e))
+        })?;
+        
+        info!("✅ Đã nạp thành công {} Vector Tri thức vào Khối RAM thần kinh.", graph.documents.len());
+        Ok(graph)
     }
 }

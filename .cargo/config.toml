@@ -1,0 +1,10 @@
+[build]
+# 🚨 LỆNH BÀI PHẦN CỨNG: Ép Trình biên dịch giao tiếp trực tiếp với Lõi CPU ảo hóa
+rustflags = [
+    # 1. Quét phần cứng: Lệnh cho Rust tối ưu hóa trực tiếp cho chip CPU hiện tại (Native)
+    "-C", "target-cpu=native",
+    
+    # 2. Khóa cứng tập lệnh: Bắt buộc mở khóa AVX2 (Toán học Vector), 
+    # FMA (Nhân cộng tích lũy nhanh cho ma trận), và F16C (Xử lý Half-Precision cho Safetensors 4GB)
+    "-C", "target-feature=+avx2,+fma,+f16c",
+]

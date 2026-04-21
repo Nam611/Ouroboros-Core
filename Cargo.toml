@@ -2,48 +2,60 @@
 name = "ouroboros_core"
 version = "0.1.0"
 edition = "2021"
-authors = ["Nam & Gemini <Ouroboros Architect>"]
-description = "Agentic Operating System - Depth Scaling with TurboQuant Memory"
-# 🚨 VIÊN ĐẠN BẠC: Ép phiên bản, khóa chặt hệ sinh thái
+authors = ["Nam & Gemini <Chief Architect>"]
+description = "Agentic Operating System - Depth Scaling with TurboQuant Memory & Gemma 4"
 rust-version = "1.85" 
 
 [dependencies]
-# 1. Trái tim bất đồng bộ (Async Engine)
-tokio = { version = "1.36", features = ["full"] }
-async-trait = "0.1"
-
-# 2. Hệ miễn dịch (Zero-Panic Policy)
-thiserror = "1.0"
-anyhow = "1.0"
-
-# 3. Não bộ viễn trắc (Telemetry & Observability)
-tracing = "0.1"
+# ---------------------------------------------------------
+# 1. HẠ TẦNG CƠ SỞ (Core Infrastructure)
+# ---------------------------------------------------------
+# 🚨 KHÔI PHỤC: Bổ sung "process" để Lõi Swarm có thể chạy lệnh Terminal
+tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "fs", "io-util", "sync", "time", "process"] } 
+async-trait = "0.1"                               
+thiserror = "1.0"                                 
+anyhow = "1.0"                                    
+tracing = "0.1"                                   
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+clap = { version = "4.6.1", features = ["derive"] } 
 
-# 4. Giao tiếp dữ liệu (Serialization)
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-
-# 5. I/O & Byte manipulation (Dành cho TurboQuant & Permission Sandbox)
+# ---------------------------------------------------------
+# 2. QUẢN TRỊ DỮ LIỆU & BỘ NHỚ (Data & Memory Management)
+# ---------------------------------------------------------
+serde = { version = "1.0", features = ["derive"] } 
+serde_json = "1.0"                                 
 tokio-util = { version = "0.7", features = ["codec", "io"] }
-bytes = "1.5"
+bytes = "1.5"                                      
+bincode = "1.3.3"                                  
+memmap2 = "0.9.3" # 🚨 KHÔI PHỤC: Để Động cơ Tiến hóa (Evolution) ánh xạ file
+rayon = "1.12.0"  
 
 # ---------------------------------------------------------
-# 🚨 VŨ KHÍ MỚI: KỶ NGUYÊN NEURAL BRIDGE (LÕI TENSOR NATIVE)
+# 3. LÕI NHẬN THỨC BARE-METAL & EMBEDDING
 # ---------------------------------------------------------
-candle-core = "0.8.1"
-candle-nn = "0.8.1"
+hf-hub = { version = "0.3.2", features = ["tokio"] } 
+tokenizers = "0.21.1" 
 
+candle-core = "0.8.2"
+candle-nn = "0.8.2"
+# 🚨 KHÔI PHỤC: Bắt buộc phải có mặt để Lõi Embedding chạy BertModel
+candle-transformers = "0.8.2" 
 
-# [BỔ SUNG CHO LỄ ĐÁNH THỨC LLM]
-candle-transformers = "0.8.1" # Bản thiết kế mạch Transformer chuẩn
-hf-hub = "0.3.2"              # Cầu nối tải Model trực tiếp (Sync/Async)
-tokenizers = "0.19.1"         # Động cơ băm từ vựng C/Rust native
+# ---------------------------------------------------------
+# 4. LÕI TOÁN HỌC (TurboQuant Primitives)
+# ---------------------------------------------------------
+rand = "0.8.5"
+rand_distr = "0.4.3"
+
+# ---------------------------------------------------------
+# 5. GIAO DIỆN CHỈ HUY (Titanium TUI)
+# ---------------------------------------------------------
+ratatui = "0.26.2"      
+crossterm = "0.27.0"    
 
 [profile.release]
-# Tối ưu hóa cực đại cho Compute
-opt-level = 3        
-lto = true           
-codegen-units = 1    
-panic = "abort"      
+opt-level = 3          
+lto = "fat"            
+codegen-units = 1      
+panic = "abort"        
 strip = true
